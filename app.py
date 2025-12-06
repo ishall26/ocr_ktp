@@ -95,18 +95,29 @@ def extract_hog_features(image):
         raise ValueError("Model config not loaded")
     
     try:
+        # Ensure image is 2D (grayscale)
+        if len(image.shape) == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
         # Get HOG parameters from config
         orientations = model_config.get('hog_orientations', 9)
         cell_size = tuple(model_config.get('hog_cell', [8, 8]))
         block_size = tuple(model_config.get('hog_block', [16, 16]))
-        block_stride = tuple(model_config.get('hog_stride', [8, 8]))
         
-        # Extract HOG features
+        # Ensure image size is compatible with block/cell size
+        img_height, img_width = image.shape
+        min_size = block_size[0] + cell_size[0]
+        
+        if img_height < min_size or img_width < min_size:
+            # Resize image if too small
+            image = cv2.resize(image, (min_size, min_size))
+        
+        # Extract HOG features with safer parameters
         features, hog_image = hog(
             image,
             orientations=orientations,
             pixels_per_cell=cell_size,
-            cells_per_block=block_size,
+            cells_per_block=(block_size[0] // cell_size[0], block_size[1] // cell_size[1]),
             block_norm='L2-Hys',
             visualize=True,
             channel_axis=None
@@ -125,22 +136,28 @@ def preprocess_digit_image(image_data):
             img_array = np.frombuffer(image_data, dtype=np.uint8)
             img = cv2.imdecode(img_array, cv2.IMREAD_GRAYSCALE)
         else:
-            img = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
+            if len(image_data.shape) == 3:
+                img = cv2.cvtColor(image_data, cv2.COLOR_BGR2GRAY)
+            else:
+                img = image_data
+        
+        if img is None:
+            raise ValueError("Failed to decode image")
+        
+        # Resize to configured size first
+        resize_to = model_config.get('resize_to', 48)
+        img = cv2.resize(img, (resize_to, resize_to))
         
         # Deskew if configured
         if model_config.get('deskew', False):
             img = deskew_image(img)
         
-        # Resize to configured size
-        resize_to = model_config.get('resize_to', 48)
-        img = cv2.resize(img, (resize_to, resize_to))
+        # Apply threshold
+        _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
         
         # Normalize if configured
         if model_config.get('normalize', False):
-            img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
-        
-        # Apply threshold
-        _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+            img = img.astype(np.float32) / 255.0
         
         return img
         
