@@ -109,7 +109,7 @@ def extract_hog_features(image):
             cells_per_block=block_size,
             block_norm='L2-Hys',
             visualize=True,
-            multichannel=False
+            channel_axis=None
         )
         
         return features.reshape(1, -1)
