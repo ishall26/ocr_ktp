@@ -34,6 +34,8 @@ COPY --from=builder /root/.local /root/.local
 # Copy application files
 COPY app.py .
 COPY requirements.txt .
+COPY digit_feature_config.json .
+COPY digit_svm_best_ml.xml .
 
 # Set environment variables
 ENV PATH=/root/.local/bin:$PATH \
