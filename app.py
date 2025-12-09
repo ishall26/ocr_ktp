@@ -704,11 +704,18 @@ def predict():
             # Store details
             char_details = []
             for i, (char, pred, conf) in enumerate(zip(field_chars, preds, confidences)):
-                char_base64 = base64.b64encode(cv2.imwrite('', char) or b'').decode('utf-8')
+                # Encode character image to PNG bytes then to base64
+                success, img_bytes = cv2.imencode('.png', char)
+                if success:
+                    char_base64 = base64.b64encode(img_bytes).decode('utf-8')
+                else:
+                    char_base64 = ''
+                
                 char_details.append({
                     'index': i,
                     'character': pred,
-                    'confidence': float(conf)
+                    'confidence': float(conf),
+                    'image': f'data:image/png;base64,{char_base64}' if char_base64 else None
                 })
             
             field_details[field_name] = {
