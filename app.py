@@ -727,18 +727,8 @@ def predict():
                 'character_details': char_details
             }
         
-        return jsonify({
-            'success': True,
-            'fields': field_results,
-            'field_details': field_details,
-            'crop_info': {
-                'left': crop_rect[0],
-                'top': crop_rect[1],
-                'width': crop_rect[2],
-                'height': crop_rect[3]
-            },
-            'total_fields': len(field_results)
-        }), 200
+        # Return compact response with just fields
+        return jsonify(field_results), 200
         
     except Exception as e:
         import traceback
