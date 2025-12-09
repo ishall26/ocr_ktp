@@ -148,6 +148,24 @@ def preprocess_digit_image(image_data):
         raise ValueError(f"Error preprocessing image: {str(e)}")
 
 
+@app.route('/', methods=['GET', 'POST'])
+def root():
+    """Root endpoint - redirect or handle predict"""
+    if request.method == 'POST':
+        # Redirect POST to /predict
+        return predict()
+    return jsonify({
+        'message': 'OCR KTP API',
+        'endpoints': {
+            'GET /': 'This endpoint',
+            'GET /health': 'Health check',
+            'POST /predict': 'Predict single digit from image',
+            'POST /predict-batch': 'Predict multiple digits',
+            'GET /model-info': 'Get model information'
+        }
+    }), 200
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint"""
